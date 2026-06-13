@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import DateSeparator from '../DateSeparator/DateSeparator'
 import Message from '../Message/Message'
 import Spinner from '../Spinner/Spinner'
@@ -13,10 +13,6 @@ import styles from './ChatArea.module.css'
 
 const SCROLL_NEAR_BOTTOM_THRESHOLD = 100
 
-function prefersReducedMotion() {
-  return window.matchMedia('(prefers-reduced-motion: reduce)').matches
-}
-
 function isNearBottom(container: HTMLDivElement) {
   return (
     container.scrollHeight - container.scrollTop - container.clientHeight <=
@@ -25,8 +21,16 @@ function isNearBottom(container: HTMLDivElement) {
 }
 
 type ChatListItem =
-  | { type: 'separator'; id: string; date: string }
-  | { type: 'message'; message: MessageType }
+  | { type: 'separator'; id: string; label: string }
+  | {
+      type: 'message'
+      id: string
+      text: string
+      author?: string
+      timestamp: string
+      dateTime: string
+      isOwn: boolean
+    }
 
 type ChatAreaProps = {
   messages: MessageType[]
@@ -47,12 +51,24 @@ function buildChatList(messages: MessageType[]): ChatListItem[] {
       items.push({
         type: 'separator',
         id: `separator-${dayKey}`,
-        date: message.createdAt,
+        label: formatDateSeparator(message.createdAt),
       })
       previousDayKey = dayKey
     }
 
-    items.push({ type: 'message', message })
+    const isOwn = message.author === CURRENT_AUTHOR
+    const timestamp = formatMessageTime(message.createdAt)
+    const author = isOwn ? undefined : message.author
+
+    items.push({
+      type: 'message',
+      id: message._id,
+      text: message.message,
+      author,
+      timestamp,
+      dateTime: message.createdAt,
+      isOwn,
+    })
   }
 
   return items
@@ -71,9 +87,27 @@ function ChatArea({
   const isNearBottomRef = useRef(true)
   const hasScrolledInitiallyRef = useRef(false)
   const isLoadingMoreRef = useRef(isLoadingMore)
-  const chatItems = buildChatList(messages)
+  const previousMessagesRef = useRef<MessageType[]>([])
+  const prefersReducedMotionRef = useRef(false)
+  const scrollFrameRef = useRef<number | null>(null)
+  const chatItems = useMemo(() => buildChatList(messages), [messages])
 
   isLoadingMoreRef.current = isLoadingMore
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
+    prefersReducedMotionRef.current = mediaQuery.matches
+
+    function handleChange(event: MediaQueryListEvent) {
+      prefersReducedMotionRef.current = event.matches
+    }
+
+    mediaQuery.addEventListener('change', handleChange)
+
+    return () => {
+      mediaQuery.removeEventListener('change', handleChange)
+    }
+  }, [])
 
   useEffect(() => {
     const container = chatAreaRef.current
@@ -84,15 +118,28 @@ function ChatArea({
 
     const chatContainer = container
 
-    function handleScroll() {
+    function updateNearBottom() {
       isNearBottomRef.current = isNearBottom(chatContainer)
+      scrollFrameRef.current = null
+    }
+
+    function handleScroll() {
+      if (scrollFrameRef.current !== null) {
+        return
+      }
+
+      scrollFrameRef.current = window.requestAnimationFrame(updateNearBottom)
     }
 
     container.addEventListener('scroll', handleScroll, { passive: true })
-    handleScroll()
+    updateNearBottom()
 
     return () => {
       container.removeEventListener('scroll', handleScroll)
+
+      if (scrollFrameRef.current !== null) {
+        window.cancelAnimationFrame(scrollFrameRef.current)
+      }
     }
   }, [isLoading])
 
@@ -135,10 +182,23 @@ function ChatArea({
       return
     }
 
+    const previousMessages = previousMessagesRef.current
+    previousMessagesRef.current = messages
+
     if (pendingScrollRestoreRef.current !== null) {
       const previousScrollHeight = pendingScrollRestoreRef.current
       pendingScrollRestoreRef.current = null
       container.scrollTop += container.scrollHeight - previousScrollHeight
+      return
+    }
+
+    const prependedOlderMessages =
+      messages.length > previousMessages.length &&
+      messages[0]?._id !== previousMessages[0]?._id &&
+      messages[messages.length - 1]?._id ===
+        previousMessages[previousMessages.length - 1]?._id
+
+    if (prependedOlderMessages) {
       return
     }
 
@@ -149,7 +209,7 @@ function ChatArea({
       return
     }
 
-    if (isNearBottomRef.current && !prefersReducedMotion()) {
+    if (isNearBottomRef.current && !prefersReducedMotionRef.current) {
       container.scrollTop = container.scrollHeight
     }
   }, [messages])
@@ -198,22 +258,19 @@ function ChatArea({
                 return (
                   <DateSeparator
                     key={item.id}
-                    label={formatDateSeparator(item.date)}
+                    label={item.label}
                   />
                 )
               }
 
-              const { message } = item
-              const isOwn = message.author === CURRENT_AUTHOR
-
               return (
                 <Message
-                  key={message._id}
-                  text={message.message}
-                  author={isOwn ? undefined : message.author}
-                  timestamp={formatMessageTime(message.createdAt)}
-                  dateTime={message.createdAt}
-                  isOwn={isOwn}
+                  key={item.id}
+                  text={item.text}
+                  author={item.author}
+                  timestamp={item.timestamp}
+                  dateTime={item.dateTime}
+                  isOwn={item.isOwn}
                 />
               )
             })}

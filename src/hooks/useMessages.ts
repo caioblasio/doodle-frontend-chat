@@ -8,6 +8,27 @@ import {
 } from '../constants/config'
 import type { Message } from '../types/message'
 
+// Merges API results into the message list without duplicates.
+// Use 'prepend' when loading older messages; use 'append' when polling for new ones.
+function mergeUniqueMessages(
+  previous: Message[],
+  incoming: Message[],
+  position: 'prepend' | 'append',
+): Message[] {
+  const existingIds = new Set(previous.map((message) => message._id))
+  const newMessages = incoming.filter(
+    (message) => !existingIds.has(message._id),
+  )
+
+  if (newMessages.length === 0) {
+    return previous
+  }
+
+  return position === 'prepend'
+    ? [...newMessages, ...previous]
+    : [...previous, ...newMessages]
+}
+
 export function useMessages() {
   const [messages, setMessages] = useState<Message[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -17,6 +38,23 @@ export function useMessages() {
   const [sendError, setSendError] = useState<string | null>(null)
   const [hasMore, setHasMore] = useState(false)
   const newestCreatedAtRef = useRef<string | null>(null)
+  const oldestMessageRef = useRef<Message | null>(null)
+  const isLoadingMoreRef = useRef(isLoadingMore)
+  const hasMoreRef = useRef(hasMore)
+
+  isLoadingMoreRef.current = isLoadingMore
+  hasMoreRef.current = hasMore
+
+  useEffect(() => {
+    if (messages.length === 0) {
+      newestCreatedAtRef.current = null
+      oldestMessageRef.current = null
+      return
+    }
+
+    newestCreatedAtRef.current = messages[messages.length - 1].createdAt
+    oldestMessageRef.current = messages[0]
+  }, [messages])
 
   const loadInitialMessages = useCallback(async () => {
     setIsLoading(true)
@@ -48,15 +86,6 @@ export function useMessages() {
   }, [loadInitialMessages])
 
   useEffect(() => {
-    if (messages.length === 0) {
-      newestCreatedAtRef.current = null
-      return
-    }
-
-    newestCreatedAtRef.current = messages[messages.length - 1].createdAt
-  }, [messages])
-
-  useEffect(() => {
     if (isLoading || loadError) {
       return
     }
@@ -85,18 +114,7 @@ export function useMessages() {
           return
         }
 
-        setMessages((previous) => {
-          const existingIds = new Set(previous.map((message) => message._id))
-          const newMessages = data.filter(
-            (message) => !existingIds.has(message._id),
-          )
-
-          if (newMessages.length === 0) {
-            return previous
-          }
-
-          return [...previous, ...newMessages]
-        })
+        setMessages((previous) => mergeUniqueMessages(previous, data, 'append'))
       } catch (error) {
         console.error('Failed to poll for messages:', error)
       }
@@ -142,11 +160,15 @@ export function useMessages() {
   }, [isLoading, loadError])
 
   const loadMoreMessages = useCallback(async (): Promise<boolean> => {
-    if (isLoadingMore || !hasMore || messages.length === 0) {
+    if (
+      isLoadingMoreRef.current ||
+      !hasMoreRef.current ||
+      oldestMessageRef.current === null
+    ) {
       return false
     }
 
-    const oldestMessage = messages[0]
+    const oldestMessage = oldestMessageRef.current
     setIsLoadingMore(true)
 
     try {
@@ -157,14 +179,7 @@ export function useMessages() {
 
       setHasMore(data.length === MESSAGE_PAGE_SIZE)
 
-      setMessages((previous) => {
-        const existingIds = new Set(previous.map((message) => message._id))
-        const newMessages = data.filter(
-          (message) => !existingIds.has(message._id),
-        )
-
-        return [...newMessages, ...previous]
-      })
+      setMessages((previous) => mergeUniqueMessages(previous, data, 'prepend'))
 
       return true
     } catch (error) {
@@ -173,7 +188,7 @@ export function useMessages() {
     } finally {
       setIsLoadingMore(false)
     }
-  }, [hasMore, isLoadingMore, messages])
+  }, [])
 
   const sendMessage = useCallback(async (text: string): Promise<boolean> => {
     const trimmed = text.trim()

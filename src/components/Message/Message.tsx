@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { decodeHtmlEntities } from '../../utils/html'
 import styles from './Message.module.css'
 
@@ -35,4 +36,4 @@ function Message({ text, author, timestamp, dateTime, isOwn }: MessageProps) {
   )
 }
 
-export default Message
+export default memo(Message)

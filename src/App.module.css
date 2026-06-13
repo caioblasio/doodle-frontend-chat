@@ -13,6 +13,10 @@
   inset: 0;
   z-index: -1;
   background-image: url('./assets/Body BG.png');
+  background-image: image-set(
+    url('./assets/Body BG.webp') type('image/webp'),
+    url('./assets/Body BG.png') type('image/png')
+  );
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
