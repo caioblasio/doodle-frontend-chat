@@ -18,6 +18,12 @@
   gap: 16px;
 }
 
+.loading {
+  margin: 0;
+  text-align: center;
+  color: #666666;
+}
+
 @media (max-width: 480px) {
   .chatAreaInner {
     padding: 16px;
