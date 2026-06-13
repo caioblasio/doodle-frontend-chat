@@ -1,0 +1,21 @@
+.separator {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 8px 0;
+}
+
+.line {
+  flex: 1;
+  height: 1px;
+  background-color: #c7cccf;
+  opacity: 0.6;
+}
+
+.label {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: #c7cccf;
+  letter-spacing: 0.02em;
+}
