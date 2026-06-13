@@ -1,3 +1,4 @@
+import { createApiRequestError } from './errors'
 import { AUTH_TOKEN } from '../constants/config'
 import type { Message } from '../types/message'
 
@@ -34,7 +35,7 @@ export async function fetchMessages(
   })
 
   if (!response.ok) {
-    throw new Error(`Failed to fetch messages: ${response.status}`)
+    throw await createApiRequestError(response)
   }
 
   return response.json()
@@ -54,7 +55,7 @@ export async function sendMessage(
   })
 
   if (!response.ok) {
-    throw new Error(`Failed to send message: ${response.status}`)
+    throw await createApiRequestError(response)
   }
 
   return response.json()

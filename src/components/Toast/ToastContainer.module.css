@@ -1,0 +1,25 @@
+.toastContainer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  max-width: var(--chat-max-width);
+  margin: 0 auto;
+  padding: max(12px, env(safe-area-inset-top)) var(--chat-padding-x) 0;
+  pointer-events: none;
+}
+
+.toastContainer > * {
+  pointer-events: auto;
+}
+
+@media (max-width: 480px) {
+  .toastContainer {
+    padding: max(10px, env(safe-area-inset-top)) 16px 0;
+  }
+}

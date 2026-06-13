@@ -28,7 +28,8 @@
   font-size: 14px;
 }
 
-.loading {
+.loading,
+.empty {
   margin: 0;
   text-align: center;
   color: #666666;

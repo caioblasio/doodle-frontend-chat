@@ -134,6 +134,8 @@ function ChatArea({
       <div className={styles.chatAreaInner}>
         {isLoading ? (
           <p className={styles.loading}>Loading messages...</p>
+        ) : messages.length === 0 ? (
+          <p className={styles.empty}>No messages yet. Say hello!</p>
         ) : (
           <div className={styles.messageList}>
             {hasMore && (

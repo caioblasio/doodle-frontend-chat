@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { getRequestErrorMessage } from '../api/errors'
 import { fetchMessages, sendMessage as sendMessageApi } from '../api/messages'
 import {
   CURRENT_AUTHOR,
@@ -10,39 +11,41 @@ import type { Message } from '../types/message'
 export function useMessages() {
   const [messages, setMessages] = useState<Message[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [isSending, setIsSending] = useState(false)
+  const [sendError, setSendError] = useState<string | null>(null)
   const [hasMore, setHasMore] = useState(false)
   const newestCreatedAtRef = useRef<string | null>(null)
-  useEffect(() => {
-    let cancelled = false
 
-    async function loadInitialMessages() {
-      try {
-        const data = await fetchMessages({
-          limit: MESSAGE_PAGE_SIZE,
-          before: new Date().toISOString(),
-        })
+  const loadInitialMessages = useCallback(async () => {
+    setIsLoading(true)
+    setLoadError(null)
 
-        if (!cancelled) {
-          setMessages(data)
-          setHasMore(data.length === MESSAGE_PAGE_SIZE)
-        }
-      } catch (error) {
-        console.error('Failed to load messages:', error)
-      } finally {
-        if (!cancelled) {
-          setIsLoading(false)
-        }
-      }
-    }
+    try {
+      const data = await fetchMessages({
+        limit: MESSAGE_PAGE_SIZE,
+        before: new Date().toISOString(),
+      })
 
-    loadInitialMessages()
-
-    return () => {
-      cancelled = true
+      setMessages(data)
+      setHasMore(data.length === MESSAGE_PAGE_SIZE)
+    } catch (error) {
+      console.error('Failed to load messages:', error)
+      setLoadError(
+        getRequestErrorMessage(
+          error,
+          'Failed to load messages. Please try again.',
+        ),
+      )
+    } finally {
+      setIsLoading(false)
     }
   }, [])
+
+  useEffect(() => {
+    void loadInitialMessages()
+  }, [loadInitialMessages])
 
   useEffect(() => {
     if (messages.length === 0) {
@@ -54,7 +57,7 @@ export function useMessages() {
   }, [messages])
 
   useEffect(() => {
-    if (isLoading) {
+    if (isLoading || loadError) {
       return
     }
 
@@ -136,7 +139,7 @@ export function useMessages() {
       stopPolling()
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
-  }, [isLoading])
+  }, [isLoading, loadError])
 
   const loadMoreMessages = useCallback(async (): Promise<boolean> => {
     if (isLoadingMore || !hasMore || messages.length === 0) {
@@ -180,6 +183,7 @@ export function useMessages() {
     }
 
     setIsSending(true)
+    setSendError(null)
 
     try {
       const created = await sendMessageApi(trimmed, CURRENT_AUTHOR)
@@ -187,19 +191,38 @@ export function useMessages() {
       return true
     } catch (error) {
       console.error('Failed to send message:', error)
+      setSendError(
+        getRequestErrorMessage(
+          error,
+          'Failed to send message. Please try again.',
+        ),
+      )
       return false
     } finally {
       setIsSending(false)
     }
   }, [isSending])
 
+  const clearSendError = useCallback(() => {
+    setSendError(null)
+  }, [])
+
+  const clearLoadError = useCallback(() => {
+    setLoadError(null)
+  }, [])
+
   return {
     messages,
     isLoading,
+    loadError,
+    retryLoad: loadInitialMessages,
+    clearLoadError,
     isLoadingMore,
     hasMore,
     loadMoreMessages,
     isSending,
+    sendError,
+    clearSendError,
     sendMessage,
   }
 }

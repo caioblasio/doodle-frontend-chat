@@ -6,9 +6,14 @@ import styles from './MessageInputBar.module.css'
 type MessageInputBarProps = {
   onSend: (message: string) => Promise<boolean>
   isSending: boolean
+  onInputChange?: () => void
 }
 
-function MessageInputBar({ onSend, isSending }: MessageInputBarProps) {
+function MessageInputBar({
+  onSend,
+  isSending,
+  onInputChange,
+}: MessageInputBarProps) {
   const [message, setMessage] = useState('')
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -30,7 +35,10 @@ function MessageInputBar({ onSend, isSending }: MessageInputBarProps) {
           type="text"
           placeholder="Message"
           value={message}
-          onChange={(event) => setMessage(event.target.value)}
+          onChange={(event) => {
+            setMessage(event.target.value)
+            onInputChange?.()
+          }}
           disabled={isSending}
         />
         <Button type="submit" disabled={isSendDisabled}>
