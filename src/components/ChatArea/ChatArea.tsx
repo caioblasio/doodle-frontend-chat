@@ -1,5 +1,4 @@
 import { useEffect, useLayoutEffect, useRef } from 'react'
-import Button from '../Button/Button'
 import DateSeparator from '../DateSeparator/DateSeparator'
 import Message from '../Message/Message'
 import { CURRENT_AUTHOR } from '../../constants/config'
@@ -62,10 +61,14 @@ function ChatArea({
   loadMoreMessages,
 }: ChatAreaProps) {
   const chatAreaRef = useRef<HTMLDivElement>(null)
+  const loadMoreSentinelRef = useRef<HTMLDivElement>(null)
   const pendingScrollRestoreRef = useRef<number | null>(null)
   const isNearBottomRef = useRef(true)
   const hasScrolledInitiallyRef = useRef(false)
+  const isLoadingMoreRef = useRef(isLoadingMore)
   const chatItems = buildChatList(messages)
+
+  isLoadingMoreRef.current = isLoadingMore
 
   useEffect(() => {
     const container = chatAreaRef.current
@@ -88,16 +91,37 @@ function ChatArea({
     }
   }, [isLoading])
 
-  async function handleLoadMoreClick() {
+  useEffect(() => {
     const container = chatAreaRef.current
+    const sentinel = loadMoreSentinelRef.current
 
-    if (!container || isLoadingMore || !hasMore) {
+    if (!container || !sentinel || isLoading || !hasMore) {
       return
     }
 
-    pendingScrollRestoreRef.current = container.scrollHeight
-    await loadMoreMessages()
-  }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0]
+
+        if (!entry?.isIntersecting || isLoadingMoreRef.current) {
+          return
+        }
+
+        pendingScrollRestoreRef.current = container.scrollHeight
+        void loadMoreMessages()
+      },
+      {
+        root: container,
+        threshold: 0,
+      },
+    )
+
+    observer.observe(sentinel)
+
+    return () => {
+      observer.disconnect()
+    }
+  }, [hasMore, isLoading, loadMoreMessages])
 
   useLayoutEffect(() => {
     const container = chatAreaRef.current
@@ -139,16 +163,14 @@ function ChatArea({
         ) : (
           <div className={styles.messageList}>
             {hasMore && (
-              <div className={styles.loadMore}>
-                <Button
-                  type="button"
-                  className={styles.loadMoreButton}
-                  onClick={handleLoadMoreClick}
-                  disabled={isLoadingMore}
-                >
-                  {isLoadingMore ? 'Loading...' : 'Load older messages'}
-                </Button>
-              </div>
+              <div
+                ref={loadMoreSentinelRef}
+                className={styles.loadMoreSentinel}
+                aria-hidden
+              />
+            )}
+            {isLoadingMore && (
+              <p className={styles.loadingMore}>Loading older messages...</p>
             )}
             {chatItems.map((item) => {
               if (item.type === 'separator') {

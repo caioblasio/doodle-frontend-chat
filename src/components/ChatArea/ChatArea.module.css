@@ -18,13 +18,14 @@
   gap: 16px;
 }
 
-.loadMore {
-  display: flex;
-  justify-content: center;
+.loadMoreSentinel {
+  height: 1px;
 }
 
-.loadMoreButton {
-  padding: 8px 16px;
+.loadingMore {
+  margin: 0;
+  text-align: center;
+  color: #666666;
   font-size: 14px;
 }
 
