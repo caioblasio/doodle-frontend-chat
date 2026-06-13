@@ -1,16 +1,22 @@
+import { useState } from 'react'
+import Button from '../Button/Button'
+import Input from '../Input/Input'
 import styles from './MessageInputBar.module.css'
 
 function MessageInputBar() {
+  const [message, setMessage] = useState('')
+
   return (
     <div className={styles.inputBar}>
-      <input
-        type="text"
-        className={styles.input}
-        placeholder="Message"
-      />
-      <button type="button" className={styles.sendButton}>
-        Send
-      </button>
+      <div className={styles.inputBarInner}>
+        <Input
+          type="text"
+          placeholder="Message"
+          value={message}
+          onChange={(event) => setMessage(event.target.value)}
+        />
+        <Button>Send</Button>
+      </div>
     </div>
   )
 }

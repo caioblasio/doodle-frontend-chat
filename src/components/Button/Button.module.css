@@ -1,0 +1,25 @@
+.button {
+  flex-shrink: 0;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  font: inherit;
+  font-weight: 500;
+  color: #ffffff;
+  background-color: #fb876e;
+  cursor: pointer;
+}
+
+.button:hover {
+  background-color: #fa7658;
+}
+
+.button:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

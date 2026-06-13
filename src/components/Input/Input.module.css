@@ -1,0 +1,19 @@
+.input {
+  flex: 1;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 4px;
+  font: inherit;
+  background-color: #ffffff;
+  color: #333333;
+}
+
+.input::placeholder {
+  color: #d7dbdd;
+}
+
+.input:focus {
+  outline: 2px solid rgba(255, 255, 255, 0.6);
+  outline-offset: 1px;
+}
