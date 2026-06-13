@@ -13,6 +13,10 @@ import styles from './ChatArea.module.css'
 
 const SCROLL_NEAR_BOTTOM_THRESHOLD = 100
 
+function prefersReducedMotion() {
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches
+}
+
 function isNearBottom(container: HTMLDivElement) {
   return (
     container.scrollHeight - container.scrollTop - container.clientHeight <=
@@ -145,7 +149,7 @@ function ChatArea({
       return
     }
 
-    if (isNearBottomRef.current) {
+    if (isNearBottomRef.current && !prefersReducedMotion()) {
       container.scrollTop = container.scrollHeight
     }
   }, [messages])
@@ -154,17 +158,26 @@ function ChatArea({
     <div
       ref={chatAreaRef}
       className={styles.chatArea}
-      aria-busy={isLoading || isLoadingMore}
+      role="region"
+      aria-label="Chat messages"
     >
       <div className={styles.chatAreaInner}>
         {isLoading ? (
-          <div className={styles.loading}>
+          <div className={styles.loading} role="status" aria-busy="true">
             <Spinner label="Loading messages" />
           </div>
         ) : messages.length === 0 ? (
-          <p className={styles.empty}>No messages yet. Say hello!</p>
+          <p className={styles.empty} role="status">
+            No messages yet. Say hello!
+          </p>
         ) : (
-          <div className={styles.messageList}>
+          <div
+            className={styles.messageList}
+            role="log"
+            aria-live="polite"
+            aria-relevant="additions"
+            aria-busy={isLoadingMore}
+          >
             {hasMore && (
               <div
                 ref={loadMoreSentinelRef}
@@ -199,6 +212,7 @@ function ChatArea({
                   text={message.message}
                   author={isOwn ? undefined : message.author}
                   timestamp={formatMessageTime(message.createdAt)}
+                  dateTime={message.createdAt}
                   isOwn={isOwn}
                 />
               )

@@ -3,14 +3,14 @@
   bottom: 0;
   left: 0;
   right: 0;
-  padding: 12px 0;
+  padding: 8px 0;
   padding-bottom: max(12px, env(safe-area-inset-bottom));
   background-color: #3898d4;
 }
 
 .inputBarInner {
   display: flex;
-  gap: 12px;
+  gap: 8px;
   align-items: center;
   width: 100%;
   max-width: var(--chat-max-width);
@@ -23,7 +23,7 @@
   align-items: center;
   justify-content: center;
   min-width: 72px;
-  min-height: 40px;
+  min-height: 44px;
 }
 
 @media (max-width: 480px) {

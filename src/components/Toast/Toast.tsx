@@ -18,6 +18,7 @@ function Toast({ message, onDismiss, actionLabel, onAction }: ToastProps) {
             type="button"
             className={styles.actionButton}
             onClick={onAction}
+            aria-label={actionLabel}
           >
             {actionLabel}
           </Button>

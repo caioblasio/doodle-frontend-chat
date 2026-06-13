@@ -25,7 +25,7 @@ function App() {
 
   return (
     <div className={styles.layout}>
-      <main className={styles.main}>
+      <main className={styles.main} id="chat-main">
         <ChatArea
           messages={messages}
           isLoading={isLoading}

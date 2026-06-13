@@ -33,6 +33,13 @@
   margin: 0;
   text-align: center;
   color: #666666;
+  font-size: 15px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chatArea {
+    scroll-behavior: auto;
+  }
 }
 
 @media (max-width: 480px) {
