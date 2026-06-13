@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef } from 'react'
 import Button from '../Button/Button'
 import DateSeparator from '../DateSeparator/DateSeparator'
 import Message from '../Message/Message'
@@ -10,6 +10,15 @@ import {
   getDayKey,
 } from '../../utils/dates'
 import styles from './ChatArea.module.css'
+
+const SCROLL_NEAR_BOTTOM_THRESHOLD = 100
+
+function isNearBottom(container: HTMLDivElement) {
+  return (
+    container.scrollHeight - container.scrollTop - container.clientHeight <=
+    SCROLL_NEAR_BOTTOM_THRESHOLD
+  )
+}
 
 type ChatListItem =
   | { type: 'separator'; id: string; date: string }
@@ -54,7 +63,30 @@ function ChatArea({
 }: ChatAreaProps) {
   const chatAreaRef = useRef<HTMLDivElement>(null)
   const pendingScrollRestoreRef = useRef<number | null>(null)
+  const isNearBottomRef = useRef(true)
+  const hasScrolledInitiallyRef = useRef(false)
   const chatItems = buildChatList(messages)
+
+  useEffect(() => {
+    const container = chatAreaRef.current
+
+    if (!container || isLoading) {
+      return
+    }
+
+    const chatContainer = container
+
+    function handleScroll() {
+      isNearBottomRef.current = isNearBottom(chatContainer)
+    }
+
+    container.addEventListener('scroll', handleScroll, { passive: true })
+    handleScroll()
+
+    return () => {
+      container.removeEventListener('scroll', handleScroll)
+    }
+  }, [isLoading])
 
   async function handleLoadMoreClick() {
     const container = chatAreaRef.current
@@ -81,7 +113,16 @@ function ChatArea({
       return
     }
 
-    container.scrollTop = container.scrollHeight
+    if (!hasScrolledInitiallyRef.current) {
+      container.scrollTop = container.scrollHeight
+      hasScrolledInitiallyRef.current = true
+      isNearBottomRef.current = true
+      return
+    }
+
+    if (isNearBottomRef.current) {
+      container.scrollTop = container.scrollHeight
+    }
   }, [messages])
 
   return (

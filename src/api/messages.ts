@@ -4,6 +4,7 @@ import type { Message } from '../types/message'
 type FetchMessagesParams = {
   limit?: number
   before?: string
+  after?: string
 }
 
 export async function fetchMessages(
@@ -17,6 +18,10 @@ export async function fetchMessages(
 
   if (params.before) {
     searchParams.set('before', params.before)
+  }
+
+  if (params.after) {
+    searchParams.set('after', params.after)
   }
 
   const query = searchParams.toString()
