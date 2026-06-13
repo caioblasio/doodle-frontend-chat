@@ -1,4 +1,25 @@
 .chatArea {
   flex: 1;
   min-height: 0;
+  overflow-y: auto;
+  padding-bottom: 72px;
+}
+
+.chatAreaInner {
+  width: 100%;
+  max-width: var(--chat-max-width);
+  margin: 0 auto;
+  padding: 24px var(--chat-padding-x);
+}
+
+.messageList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+@media (max-width: 480px) {
+  .chatAreaInner {
+    padding: 16px;
+  }
 }
