@@ -1,4 +1,5 @@
-import { useEffect, useRef } from 'react'
+import { useLayoutEffect, useRef } from 'react'
+import Button from '../Button/Button'
 import DateSeparator from '../DateSeparator/DateSeparator'
 import Message from '../Message/Message'
 import { CURRENT_AUTHOR } from '../../constants/config'
@@ -17,6 +18,9 @@ type ChatListItem =
 type ChatAreaProps = {
   messages: MessageType[]
   isLoading: boolean
+  isLoadingMore: boolean
+  hasMore: boolean
+  loadMoreMessages: () => Promise<boolean>
 }
 
 function buildChatList(messages: MessageType[]): ChatListItem[] {
@@ -41,27 +45,68 @@ function buildChatList(messages: MessageType[]): ChatListItem[] {
   return items
 }
 
-function ChatArea({ messages, isLoading }: ChatAreaProps) {
+function ChatArea({
+  messages,
+  isLoading,
+  isLoadingMore,
+  hasMore,
+  loadMoreMessages,
+}: ChatAreaProps) {
   const chatAreaRef = useRef<HTMLDivElement>(null)
+  const pendingScrollRestoreRef = useRef<number | null>(null)
   const chatItems = buildChatList(messages)
 
-  useEffect(() => {
+  async function handleLoadMoreClick() {
     const container = chatAreaRef.current
 
-    if (!container || isLoading) {
+    if (!container || isLoadingMore || !hasMore) {
+      return
+    }
+
+    pendingScrollRestoreRef.current = container.scrollHeight
+    await loadMoreMessages()
+  }
+
+  useLayoutEffect(() => {
+    const container = chatAreaRef.current
+
+    if (!container) {
+      return
+    }
+
+    if (pendingScrollRestoreRef.current !== null) {
+      const previousScrollHeight = pendingScrollRestoreRef.current
+      pendingScrollRestoreRef.current = null
+      container.scrollTop += container.scrollHeight - previousScrollHeight
       return
     }
 
     container.scrollTop = container.scrollHeight
-  }, [isLoading, messages])
+  }, [messages])
 
   return (
-    <div ref={chatAreaRef} className={styles.chatArea}>
+    <div
+      ref={chatAreaRef}
+      className={styles.chatArea}
+      aria-busy={isLoadingMore}
+    >
       <div className={styles.chatAreaInner}>
         {isLoading ? (
           <p className={styles.loading}>Loading messages...</p>
         ) : (
           <div className={styles.messageList}>
+            {hasMore && (
+              <div className={styles.loadMore}>
+                <Button
+                  type="button"
+                  className={styles.loadMoreButton}
+                  onClick={handleLoadMoreClick}
+                  disabled={isLoadingMore}
+                >
+                  {isLoadingMore ? 'Loading...' : 'Load older messages'}
+                </Button>
+              </div>
+            )}
             {chatItems.map((item) => {
               if (item.type === 'separator') {
                 return (

@@ -18,6 +18,16 @@
   gap: 16px;
 }
 
+.loadMore {
+  display: flex;
+  justify-content: center;
+}
+
+.loadMoreButton {
+  padding: 8px 16px;
+  font-size: 14px;
+}
+
 .loading {
   margin: 0;
   text-align: center;

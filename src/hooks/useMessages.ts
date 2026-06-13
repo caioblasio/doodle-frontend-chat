@@ -6,17 +6,22 @@ import type { Message } from '../types/message'
 export function useMessages() {
   const [messages, setMessages] = useState<Message[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [isSending, setIsSending] = useState(false)
-
+  const [hasMore, setHasMore] = useState(false)
   useEffect(() => {
     let cancelled = false
 
     async function loadInitialMessages() {
       try {
-        const data = await fetchMessages({ limit: MESSAGE_PAGE_SIZE })
+        const data = await fetchMessages({
+          limit: MESSAGE_PAGE_SIZE,
+          before: new Date().toISOString(),
+        })
 
         if (!cancelled) {
-          setMessages([...data].reverse())
+          setMessages(data)
+          setHasMore(data.length === MESSAGE_PAGE_SIZE)
         }
       } catch (error) {
         console.error('Failed to load messages:', error)
@@ -33,6 +38,40 @@ export function useMessages() {
       cancelled = true
     }
   }, [])
+
+  const loadMoreMessages = useCallback(async (): Promise<boolean> => {
+    if (isLoadingMore || !hasMore || messages.length === 0) {
+      return false
+    }
+
+    const oldestMessage = messages[0]
+    setIsLoadingMore(true)
+
+    try {
+      const data = await fetchMessages({
+        before: oldestMessage.createdAt,
+        limit: MESSAGE_PAGE_SIZE,
+      })
+
+      setHasMore(data.length === MESSAGE_PAGE_SIZE)
+
+      setMessages((previous) => {
+        const existingIds = new Set(previous.map((message) => message._id))
+        const newMessages = data.filter(
+          (message) => !existingIds.has(message._id),
+        )
+
+        return [...newMessages, ...previous]
+      })
+
+      return true
+    } catch (error) {
+      console.error('Failed to load older messages:', error)
+      return false
+    } finally {
+      setIsLoadingMore(false)
+    }
+  }, [hasMore, isLoadingMore, messages])
 
   const sendMessage = useCallback(async (text: string): Promise<boolean> => {
     const trimmed = text.trim()
@@ -55,5 +94,13 @@ export function useMessages() {
     }
   }, [isSending])
 
-  return { messages, isLoading, isSending, sendMessage }
+  return {
+    messages,
+    isLoading,
+    isLoadingMore,
+    hasMore,
+    loadMoreMessages,
+    isSending,
+    sendMessage,
+  }
 }
