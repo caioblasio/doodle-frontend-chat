@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef } from 'react'
 import DateSeparator from '../DateSeparator/DateSeparator'
 import Message from '../Message/Message'
+import Spinner from '../Spinner/Spinner'
 import { CURRENT_AUTHOR } from '../../constants/config'
 import type { Message as MessageType } from '../../types/message'
 import {
@@ -153,11 +154,13 @@ function ChatArea({
     <div
       ref={chatAreaRef}
       className={styles.chatArea}
-      aria-busy={isLoadingMore}
+      aria-busy={isLoading || isLoadingMore}
     >
       <div className={styles.chatAreaInner}>
         {isLoading ? (
-          <p className={styles.loading}>Loading messages...</p>
+          <div className={styles.loading}>
+            <Spinner label="Loading messages" />
+          </div>
         ) : messages.length === 0 ? (
           <p className={styles.empty}>No messages yet. Say hello!</p>
         ) : (
@@ -170,7 +173,12 @@ function ChatArea({
               />
             )}
             {isLoadingMore && (
-              <p className={styles.loadingMore}>Loading older messages...</p>
+              <div className={styles.loadingMore}>
+                <Spinner
+                  size="small"
+                  label="Loading older messages"
+                />
+              </div>
             )}
             {chatItems.map((item) => {
               if (item.type === 'separator') {

@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import Button from '../Button/Button'
 import Input from '../Input/Input'
+import Spinner from '../Spinner/Spinner'
 import styles from './MessageInputBar.module.css'
 
 type MessageInputBarProps = {
@@ -41,8 +42,12 @@ function MessageInputBar({
           }}
           disabled={isSending}
         />
-        <Button type="submit" disabled={isSendDisabled}>
-          Send
+        <Button type="submit" disabled={isSendDisabled} className={styles.sendButton}>
+          {isSending ? (
+            <Spinner size="small" variant="light" label="Sending message" />
+          ) : (
+            'Send'
+          )}
         </Button>
       </div>
     </form>

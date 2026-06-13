@@ -18,6 +18,14 @@
   padding: 0 var(--chat-padding-x);
 }
 
+.sendButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 72px;
+  min-height: 40px;
+}
+
 @media (max-width: 480px) {
   .inputBar {
     padding: 10px 0;

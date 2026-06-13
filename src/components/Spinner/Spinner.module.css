@@ -1,0 +1,39 @@
+.spinner {
+  border-radius: 50%;
+  border-style: solid;
+  animation: spin 0.8s linear infinite;
+}
+
+.default {
+  border-color: rgba(0, 0, 0, 0.12);
+  border-top-color: #3898d4;
+}
+
+.light {
+  border-color: rgba(255, 255, 255, 0.35);
+  border-top-color: #ffffff;
+}
+
+.medium {
+  width: 32px;
+  height: 32px;
+  border-width: 3px;
+}
+
+.small {
+  width: 20px;
+  height: 20px;
+  border-width: 2px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation-duration: 1.6s;
+  }
+}
