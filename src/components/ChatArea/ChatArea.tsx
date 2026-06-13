@@ -1,7 +1,7 @@
+import { useEffect, useRef } from 'react'
 import DateSeparator from '../DateSeparator/DateSeparator'
 import Message from '../Message/Message'
 import { CURRENT_AUTHOR } from '../../constants/config'
-import { useMessages } from '../../hooks/useMessages'
 import type { Message as MessageType } from '../../types/message'
 import {
   formatDateSeparator,
@@ -13,6 +13,11 @@ import styles from './ChatArea.module.css'
 type ChatListItem =
   | { type: 'separator'; id: string; date: string }
   | { type: 'message'; message: MessageType }
+
+type ChatAreaProps = {
+  messages: MessageType[]
+  isLoading: boolean
+}
 
 function buildChatList(messages: MessageType[]): ChatListItem[] {
   const items: ChatListItem[] = []
@@ -36,12 +41,22 @@ function buildChatList(messages: MessageType[]): ChatListItem[] {
   return items
 }
 
-function ChatArea() {
-  const { messages, isLoading } = useMessages()
+function ChatArea({ messages, isLoading }: ChatAreaProps) {
+  const chatAreaRef = useRef<HTMLDivElement>(null)
   const chatItems = buildChatList(messages)
 
+  useEffect(() => {
+    const container = chatAreaRef.current
+
+    if (!container || isLoading) {
+      return
+    }
+
+    container.scrollTop = container.scrollHeight
+  }, [isLoading, messages])
+
   return (
-    <div className={styles.chatArea}>
+    <div ref={chatAreaRef} className={styles.chatArea}>
       <div className={styles.chatAreaInner}>
         {isLoading ? (
           <p className={styles.loading}>Loading messages...</p>

@@ -34,3 +34,23 @@ export async function fetchMessages(
 
   return response.json()
 }
+
+export async function sendMessage(
+  message: string,
+  author: string,
+): Promise<Message> {
+  const response = await fetch('/api/v1/messages', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${AUTH_TOKEN}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ message, author }),
+  })
+
+  if (!response.ok) {
+    throw new Error(`Failed to send message: ${response.status}`)
+  }
+
+  return response.json()
+}

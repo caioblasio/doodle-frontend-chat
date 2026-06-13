@@ -1,23 +1,43 @@
-import { useState } from 'react'
+import { useState, type FormEvent } from 'react'
 import Button from '../Button/Button'
 import Input from '../Input/Input'
 import styles from './MessageInputBar.module.css'
 
-function MessageInputBar() {
+type MessageInputBarProps = {
+  onSend: (message: string) => Promise<boolean>
+  isSending: boolean
+}
+
+function MessageInputBar({ onSend, isSending }: MessageInputBarProps) {
   const [message, setMessage] = useState('')
 
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    const sent = await onSend(message)
+
+    if (sent) {
+      setMessage('')
+    }
+  }
+
+  const isSendDisabled = isSending || !message.trim()
+
   return (
-    <div className={styles.inputBar}>
+    <form className={styles.inputBar} onSubmit={handleSubmit}>
       <div className={styles.inputBarInner}>
         <Input
           type="text"
           placeholder="Message"
           value={message}
           onChange={(event) => setMessage(event.target.value)}
+          disabled={isSending}
         />
-        <Button>Send</Button>
+        <Button type="submit" disabled={isSendDisabled}>
+          Send
+        </Button>
       </div>
-    </div>
+    </form>
   )
 }
 
